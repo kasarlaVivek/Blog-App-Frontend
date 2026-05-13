@@ -16,7 +16,7 @@ export const useAuth = create((set) => ({
             // set loading state
             set({ loading: true, err: null });
             // make api req
-            let res = await axios.post("http://localhost:3000/common-api/login", userCredObj,
+            let res = await axios.post("https://blog-app-backend-1-ry1p.onrender.com/common-api/login", userCredObj,
                 { withCredentials: true });
             console.log(res);
 
@@ -39,7 +39,7 @@ export const useAuth = create((set) => ({
             // set loading state
             set({ loading: true, err: null });
             // make logout api req
-            let res = await axios.get("http://localhost:3000/common-api/logout", { withCredentials: true })
+            let res = await axios.get("https://blog-app-backend-1-ry1p.onrender.com/common-api/logout", { withCredentials: true })
             // update state
             set({ loading: false, err: null, isAuthenticated: false, currentUser: null })
         } catch (err) {
@@ -54,14 +54,14 @@ export const useAuth = create((set) => ({
     checkAuth: async () => {
         try {
             set({ loading: true });
-            const res = await axios.get("http://localhost:3000/common-api/check-auth", { withCredentials: true });
+            const res = await axios.get("https://blog-app-backend-1-ry1p.onrender.com/common-api/check-auth", { withCredentials: true });
 
             set({
                 currentUser: res.data.payload,
                 isAuthenticated: true,
                 loading: false,
             });
-            
+
         } catch (err) {
             // If user is not logged in → do nothing
             if (err.response?.status === 401) {

@@ -59,11 +59,11 @@ function Header() {
           {isAuthenticated && (<>
           
           <li>
-              <NavLink to="/" className={navLinkClass}>
+              <NavLink to={currentUser?.role ? `/${currentUser.role.toLowerCase()}-dashboard` : "/"} className={navLinkClass}>
                 <img
-                  src={currentUser.profileImageUrl || ""}
+                  src={currentUser.profileImageUrl || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
                   alt="Profile"
-                  style={{ width: '30px', height: '30px', borderRadius: '50%' }}
+                  style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover', border: '1px solid #d2d2d7' }}
                 />
               </NavLink>
             </li>

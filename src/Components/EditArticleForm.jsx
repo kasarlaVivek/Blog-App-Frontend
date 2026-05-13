@@ -43,7 +43,7 @@ function EditArticle() {
   const updateArticle = async (data) => {
      console.log("ID is:", id);
     try{
-      let res = await axios.put(`http://localhost:3000/author-api/articles/${id}`,data,{withCredentials:true});
+      let res = await axios.put(`https://blog-app-backend-1-ry1p.onrender.com/author-api/articles/${id}`,data,{withCredentials:true});
       navigate("/author-dashboard");
     } catch (err) {
       setErr(err.response?.data?.error);

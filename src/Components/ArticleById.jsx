@@ -34,24 +34,31 @@ function ArticleByID() {
   const [err, setErr] = useState(null);
 
   useEffect(() => {
-    if (article) return;
-
+    // We fetch the article every time to ensure we get the populated author details,
+    // because location.state might only have the unpopulated author ID from the dashboard.
     const getArticle = async () => {
-      setLoading(true);
+      // Only show loading if we don't have initial state
+      if (!article) setLoading(true);
 
       try {
-        const res = await axios.get(`http://localhost:3000/user-api/article/${id}`, { withCredentials: true });
+        // Use the correct backend path (articles instead of article)
+        // If the user is an author, they should hit author-api, else user-api
+        const roleApi = user?.role?.toLowerCase() === "author" ? "author-api" : "user-api";
+        const res = await axios.get(`https://blog-app-backend-1-ry1p.onrender.com/${roleApi}/articles/${id}`, { withCredentials: true });
 
-        setArticle(res.data.payload);
+        // Update the article state with the fully populated document
+        if(res.data.payload) {
+            setArticle(res.data.payload);
+        }
       } catch (err) {
-        setErr(err.response?.data?.error);
+        setErr(err.response?.data?.error || "Failed to load article");
       } finally {
         setLoading(false);
       }
     };
 
     getArticle();
-  }, [id]);
+  }, [id, user?.role]);
 
   const formatDate = (date) => {
     return new Date(date).toLocaleString("en-IN", {
@@ -70,7 +77,7 @@ function ArticleByID() {
 
     try {
       const res = await axios.patch(
-        `http://localhost:3000/author-api/articles/${id}/status`,
+        `https://blog-app-backend-1-ry1p.onrender.com/author-api/articles/${id}/status`,
         { isArticleActive: newStatus },
         { withCredentials: true },
       );
@@ -95,14 +102,14 @@ function ArticleByID() {
 
   //edit article
   const editArticle = (articleObj) => {
-    navigate("/edit-article", { state: articleObj });
+    navigate(`/edit-article/${articleObj._id}`, { state: articleObj });
   };
 
   //post comment by user
   const addComment = async (commentObj) => {
     //add artcileId
     console.log(commentObj);
-    let res = await axios.put(`http://localhost:3000/user-api/article/${article._id}`, commentObj, { withCredentials: true });
+    let res = await axios.put(`https://blog-app-backend-1-ry1p.onrender.com/user-api/article/${article._id}`, commentObj, { withCredentials: true });
     if (res.status === 201) {
       toast.success(res.data.message);
       setArticle(res.data.payload);
@@ -113,6 +120,9 @@ function ArticleByID() {
   if (err) return <p className={errorClass}>{err}</p>;
   if (!article) return null;
 
+  const defaultImage = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+  const authorImg = article.author?.profileImageUrl || defaultImage;
+
   return (
     <div className={articlePageWrapper}>
       {/* Header */}
@@ -122,7 +132,10 @@ function ArticleByID() {
         <h1 className={`${articleMainTitle} uppercase`}>{article.title}</h1>
 
         <div className={articleAuthorRow}>
-          <div className={authorInfo}>✍️ {article.author?.firstName || "Author"}</div>
+          <div className={authorInfo}>
+            <img src={authorImg} alt="Author" className="w-6 h-6 rounded-full object-cover border border-[#d2d2d7]" />
+            {article.author?.firstName || "Author"}
+          </div>
 
           <div>{formatDate(article.createdAt)}</div>
         </div>
@@ -162,15 +175,24 @@ function ArticleByID() {
       )}
 
       {/* comments */}
-      {user?.role === "USER" && article.comments.map((comment, index) => (
-        // Use comment._id if available, otherwise use index
-        <div key={comment._id || index} className="bg-gray-300 p-6 rounded-2xl mt-4">
-          <p className="uppercase text-pink-400 font-bold mb-3">
-            {comment.user?.email || "Anonymous User"}
-          </p>
-          <p>{comment.comment}</p>
+      {user?.role === "USER" && article.comments.length > 0 && (
+        <div className="mt-12">
+          <h3 className="text-xl font-bold text-[#1d1d1f] mb-6">Comments</h3>
+          <div className="flex flex-col gap-4">
+            {article.comments.map((comment, index) => (
+              <div key={comment._id || index} className="bg-[#f5f5f7] p-5 rounded-2xl border border-[#e8e8ed]">
+                <div className="flex items-center gap-2 mb-2">
+                  <img src={defaultImage} className="w-6 h-6 rounded-full object-cover border border-[#d2d2d7]" alt="User" />
+                  <p className="text-sm font-semibold text-[#1d1d1f]">
+                    {comment.user?.email || "Anonymous User"}
+                  </p>
+                </div>
+                <p className="text-[#6e6e73] text-sm leading-relaxed">{comment.comment}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      ))}
+      )}
 
 
       {/* Footer */}

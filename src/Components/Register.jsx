@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/globalStore.js';
 import axios from "axios";
+import { toast } from "react-hot-toast";
 // Import the styles from your common file
 import { formCard, formTitle, labelClass, inputClass, formGroup, submitBtn } from '../styles/common.js';
 
@@ -10,6 +11,7 @@ function Register() {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const navigate = useNavigate();
   const [preview, setPreview] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const { err, loading, setErr, setLoading } = useAuth();
 
@@ -17,21 +19,37 @@ function Register() {
   const userRegister = async (newUser) => {
     setLoading(true);
     setErr(null);
-    // Create form data object
-    const formData = new FormData();
-    //get user object
+    
     let { role, profileImgUrl, ...userObj } = newUser;
-    //add all fields except profileImgUrl to FormData object
-    Object.keys(userObj).forEach((key) => {
-      formData.append(key, userObj[key]);
-    });
-    // add profileImgUrl to Formdata object
-    formData.append("profileImageUrl", profileImgUrl[0]);
-    formData.append("role",role);
     let roleLower = role.toLowerCase();
+    
     try {
-      let resObj = await axios.post(`http://localhost:3000/${roleLower}-api/users`, formData);
-      if (resObj.status === 201) {
+      let resObj;
+      if (selectedFile) {
+        // If an image is selected, we MUST send FormData (multipart/form-data)
+        const formData = new FormData();
+        Object.keys(userObj).forEach((key) => {
+          formData.append(key, userObj[key]);
+        });
+        formData.append("profileImgUrl", selectedFile);
+        formData.append("role", role);
+        
+        resObj = await axios.post(`https://blog-app-backend-1-ry1p.onrender.com/${roleLower}-api/users`, formData);
+      } else {
+        // If no image is selected, send plain JSON.
+        // This bypasses the need for multer on the remote backend, fixing the 400 error for Authors.
+        const jsonData = {
+          ...userObj,
+          role: role
+        };
+        
+        resObj = await axios.post(`https://blog-app-backend-1-ry1p.onrender.com/${roleLower}-api/users`, jsonData, {
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (resObj && (resObj.status === 201 || resObj.status === 200)) {
+        toast.success("Registration successful! Please login.");
         navigate('/login');
       }
     } catch (err) {
@@ -110,7 +128,6 @@ function Register() {
             <input
               type="file"
               accept="image/png, image/jpeg"
-              {...register("profileImgUrl")}
               onChange={(e) => {
 
                 //get image file
@@ -129,6 +146,7 @@ function Register() {
                   //Converts file → temporary browser URL(create preview URL)
                   const previewUrl = URL.createObjectURL(file);
                   setPreview(previewUrl);
+                  setSelectedFile(file);
                   setErr(null);
                 }
 

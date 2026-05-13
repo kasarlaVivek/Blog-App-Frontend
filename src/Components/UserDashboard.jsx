@@ -4,10 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import {
+  pageWrapper,
+  pageTitleClass,
+  bodyText,
   articleGrid,
   articleCardClass,
   articleTitle,
-  articleBody,
+  articleExcerpt,
+  articleMeta,
   ghostBtn,
   loadingClass,
   errorClass,
@@ -25,42 +29,23 @@ function UserDashboard() {
   const navigate = useNavigate();
   const [loading,setLoading] = useState(false);
 
-  const onLogOut = async () => {
-    await logout();
-    toast.success("logout success")
-    navigate('/login')
-  }
-
-
-
-useEffect(() => {
-  if (!isAuthenticated) return;
-  const getArticles = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get("http://localhost:3000/user-api/articles", { 
-        withCredentials: true 
-      });
-      setArticles(res.data.payload);
-    } catch (err) {
-      setErr(err.response?.data?.error || "Failed to load articles");
-    } finally {
-      setLoading(false);
-    }
-  };
-  getArticles();
-}, [isAuthenticated]); 
-
-
-
-  // convert UTC → IST
-  const formatDateIST = (date) => {
-    return new Date(date).toLocaleString("en-IN", {
-      timeZone: "Asia/Kolkata",
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  };
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const getArticles = async () => {
+      setLoading(true);
+      try {
+        const res = await axios.get("https://blog-app-backend-1-ry1p.onrender.com/user-api/articles", { 
+          withCredentials: true 
+        });
+        setArticles(res.data.payload);
+      } catch (err) {
+        setErr(err.response?.data?.error || "Failed to load articles");
+      } finally {
+        setLoading(false);
+      }
+    };
+    getArticles();
+  }, [isAuthenticated]); 
 
   const navigateToArticleByID = (articleObj) => {
     navigate(`/article/${articleObj._id}`, {
@@ -68,35 +53,47 @@ useEffect(() => {
     });
   };
 
-
+  const defaultImage = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
 
   return (
-    <div>
-      <button onClick={onLogOut}>Logout</button>
-      <div className="p-10 bg-gray-100 min-h-screen">
-        <h1 className="text-3xl font-bold mb-6 text-center">All Articles</h1>
+    <div className={pageWrapper}>
+      <div className="mb-12">
+        <h1 className={pageTitleClass}>Hello, {currentUser?.firstName}</h1>
+        <p className={bodyText}>Catch up on the latest insights and stories.</p>
+      </div>
+
+      {loading && <p className={loadingClass}>Loading articles...</p>}
+
+      {!loading && articles.length > 0 ? (
         <div className={articleGrid}>
-          {articles.map((articleObj) => (
-            <div className={articleCardClass} key={articleObj._id}>
-              <div className="flex flex-col h-full">
-                {/* Top Content */}
-                <div>
-                  <p className={articleTitle}>{articleObj.title}</p>
-
-                  <p>{articleObj.content.slice(0, 10)}...</p>
-
-                  <p className={timestampClass}>{formatDateIST(articleObj.createdAt)}</p>
+          {articles.map((articleObj) => {
+            const authorImg = articleObj.author?.profileImageUrl || defaultImage;
+            return (
+              <div className={articleCardClass} key={articleObj._id} onClick={() => navigateToArticleByID(articleObj)}>
+                <div className="flex items-center gap-3 mb-3 border-b border-[#e8e8ed] pb-3">
+                  <img src={authorImg} alt="Author" className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-[#1d1d1f]">{articleObj.author?.firstName || "Unknown"}</span>
+                    <span className={timestampClass}>{new Date(articleObj.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
-
-                {/* Button at bottom */}
-                <button className={`${ghostBtn} mt-auto pt-4`} onClick={() => navigateToArticleByID(articleObj)}>
-                  Read Article →
+                <p className={articleMeta}>{articleObj.category}</p>
+                <h3 className={articleTitle}>{articleObj.title}</h3>
+                <p className={articleExcerpt}>{articleObj.content.substring(0, 100)}...</p>
+                <button className={`${ghostBtn} mt-auto pt-4 flex items-center gap-1`}>
+                  Read More <span className="text-lg leading-none">→</span>
                 </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-      </div>
+      ) : (
+        !loading && (
+          <div className="text-center mt-10 text-gray-500">
+            <p>No articles available yet.</p>
+          </div>
+        )
+      )}
     </div>
   )
 }
