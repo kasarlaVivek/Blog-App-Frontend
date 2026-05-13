@@ -11,8 +11,10 @@ async function testUserRegisterWithImage() {
     formData.append("password", "password123");
     formData.append("role", "USER");
     
-    // Create a dummy image file
-    fs.writeFileSync("dummy.png", "fake image content");
+    // Create a valid 1x1 transparent PNG
+    const base64Image = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
+    const imageBuffer = Buffer.from(base64Image, 'base64');
+    fs.writeFileSync("dummy.png", imageBuffer);
     formData.append("profileImgUrl", fs.createReadStream("dummy.png"));
 
     console.log("Sending request to remote backend with image...");
