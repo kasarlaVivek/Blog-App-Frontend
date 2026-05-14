@@ -26,7 +26,7 @@ function Home() {
         const fetchArticles = async () => {
             try {
                 // Fetch from common-api so it's public
-                const res = await axios.get("https://blog-app-backend-1-ry1p.onrender.com/common-api/articles");
+                const res = await axios.get("https://blog-app-backend-1-ry1p.onrender.com/common-api/articles", { withCredentials: true });
                 if(res.data.payload) {
                     setArticles(res.data.payload);
                 }
